@@ -156,6 +156,8 @@ export const EditorPage: React.FC = () => {
     };
   }, [documentId, currentUser, dispatch, handleRemoteUpdate, handleCursorChanged, handleNewComment]);
 
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -240,41 +242,57 @@ export const EditorPage: React.FC = () => {
               </svg>
             </button>
 
-            <div className="relative group">
-              <button className="btn-icon" title="Export">
+            <div className="relative" onMouseLeave={() => setIsExportOpen(false)}>
+              <button 
+                onMouseEnter={() => setIsExportOpen(true)}
+                onClick={() => setIsExportOpen(!isExportOpen)}
+                className={`btn-icon ${isExportOpen ? 'bg-slate-100 dark:bg-slate-800' : ''}`} 
+                title="Export"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
               </button>
-              {/* Added pt-2 and removed mt-3 to close the gap and prevent disappearing */}
-              <div className="absolute right-0 pt-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-300 z-50">
-                <div className="w-56 glass rounded-[1.5rem] shadow-2xl overflow-hidden border" style={{ borderColor: 'var(--border-subtle)' }}>
-                  <div className="px-5 py-3 border-b bg-slate-50/50 dark:bg-slate-800/20" style={{ borderColor: 'var(--border-subtle)' }}>
-                    <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Choose Format</p>
+              
+              {isExportOpen && (
+                <div className="absolute right-0 pt-2 z-50 animate-fade-scale">
+                  <div className="w-56 glass rounded-[1.5rem] shadow-2xl overflow-hidden border" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <div className="px-5 py-3 border-b bg-slate-50/50 dark:bg-slate-800/20" style={{ borderColor: 'var(--border-subtle)' }}>
+                      <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Choose Format</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=markdown`, '_blank');
+                        setIsExportOpen(false);
+                      }}
+                      className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors"
+                      style={{ color: 'var(--text-body)' }}
+                    >
+                      Markdown (.md)
+                    </button>
+                    <button 
+                      onClick={() => {
+                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=pdf`, '_blank');
+                        setIsExportOpen(false);
+                      }}
+                      className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors flex justify-between items-center"
+                      style={{ color: 'var(--text-body)' }}
+                    >
+                      PDF Document
+                    </button>
+                    <button 
+                      onClick={() => {
+                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=docx`, '_blank');
+                        setIsExportOpen(false);
+                      }}
+                      className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text(--brand-primary)] transition-colors flex justify-between items-center"
+                      style={{ color: 'var(--text-body)' }}
+                    >
+                      Word (.docx)
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=markdown`, '_blank')}
-                    className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors"
-                    style={{ color: 'var(--text-body)' }}
-                  >
-                    Markdown (.md)
-                  </button>
-                  <button 
-                    onClick={() => window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=pdf`, '_blank')}
-                    className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors flex justify-between items-center"
-                    style={{ color: 'var(--text-body)' }}
-                  >
-                    PDF Document
-                  </button>
-                  <button 
-                    onClick={() => window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=docx`, '_blank')}
-                    className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors flex justify-between items-center"
-                    style={{ color: 'var(--text-body)' }}
-                  >
-                    Word (.docx)
-                  </button>
                 </div>
-              </div>
+              )}
             </div>
 
             <button
