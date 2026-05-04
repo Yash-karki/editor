@@ -32,12 +32,18 @@ class APIService {
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
+          const state = store.getState();
+          const refreshToken = state.user.refreshToken;
+
+          // Guard: Only try to refresh if we have a token
+          if (!refreshToken) {
+            store.dispatch(logout());
+            return Promise.reject(error);
+          }
+
           originalRequest._retry = true;
 
           try {
-            const state = store.getState();
-            const refreshToken = state.user.refreshToken;
-
             const response = await this.api.post('/auth/refresh', { refreshToken });
             const { accessToken, refreshToken: newRefreshToken } = response.data;
 
