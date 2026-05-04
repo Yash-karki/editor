@@ -158,6 +158,20 @@ export const EditorPage: React.FC = () => {
 
   const [isExportOpen, setIsExportOpen] = useState(false);
 
+  const handleDownload = (format: string) => {
+    const token = accessToken;
+    const url = `${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=${format}&token=${token}`;
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setIsExportOpen(false);
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -165,7 +179,7 @@ export const EditorPage: React.FC = () => {
   return (
     <div className="flex h-screen overflow-hidden transition-colors duration-300" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <header className="h-20 px-8 flex items-center justify-between border-b relative z-30 transition-all duration-300" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+        <header className="h-20 px-8 flex items-center justify-between border-b relative z-[60] transition-all duration-300" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
           <div className="flex items-center gap-6">
             <button
               onClick={() => navigate('/dashboard')}
@@ -261,35 +275,26 @@ export const EditorPage: React.FC = () => {
                   {/* Invisible backdrop to close on click outside */}
                   <div className="fixed inset-0 z-40" onClick={() => setIsExportOpen(false)} />
                   
-                  <div className="absolute right-0 top-[80%] mt-2 w-56 glass rounded-[1.5rem] shadow-2xl overflow-hidden border z-50 animate-fade-scale" style={{ borderColor: 'var(--border-subtle)' }}>
+                  <div className="absolute right-0 top-full mt-2 w-56 glass rounded-[1.5rem] shadow-2xl overflow-hidden border z-[70] animate-fade-scale" style={{ borderColor: 'var(--border-subtle)' }}>
                     <div className="px-5 py-3 border-b bg-slate-50/50 dark:bg-slate-800/20" style={{ borderColor: 'var(--border-subtle)' }}>
                       <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Choose Format</p>
                     </div>
                     <button 
-                      onClick={() => {
-                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=markdown&token=${accessToken}`, '_blank');
-                        setIsExportOpen(false);
-                      }}
+                      onClick={() => handleDownload('markdown')}
                       className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors"
                       style={{ color: 'var(--text-body)' }}
                     >
                       Markdown (.md)
                     </button>
                     <button 
-                      onClick={() => {
-                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=pdf&token=${accessToken}`, '_blank');
-                        setIsExportOpen(false);
-                      }}
+                      onClick={() => handleDownload('pdf')}
                       className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors flex justify-between items-center"
                       style={{ color: 'var(--text-body)' }}
                     >
                       PDF Document
                     </button>
                     <button 
-                      onClick={() => {
-                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=docx&token=${accessToken}`, '_blank');
-                        setIsExportOpen(false);
-                      }}
+                      onClick={() => handleDownload('docx')}
                       className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors flex justify-between items-center"
                       style={{ color: 'var(--text-body)' }}
                     >
