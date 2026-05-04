@@ -65,6 +65,11 @@ const documentSlice = createSlice({
     setSaved: (state, action: PayloadAction<boolean>) => {
       state.isSaved = action.payload;
     },
+    updateTitle: (state, action: PayloadAction<string>) => {
+      if (state.currentDocument) {
+        state.currentDocument.title = action.payload;
+      }
+    },
   },
 });
 
@@ -76,5 +81,6 @@ export const {
   setDocumentLoading,
   setDocumentError,
   setSaved,
+  updateTitle,
 } = documentSlice.actions;
 export default documentSlice.reducer;

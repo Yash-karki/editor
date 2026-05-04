@@ -7,7 +7,7 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { RootState, AppDispatch } from '../store/appStore';
 import { apiService } from '../services/apiService';
 import { socketService } from '../services/socketService';
-import { setDocument, setSaved, addActiveUser, setActiveUsers } from '../store/slices/documentSlice';
+import { setDocument, setSaved, addActiveUser, setActiveUsers, updateTitle } from '../store/slices/documentSlice';
 import { RichTextEditor } from '../components/Editor/RichTextEditor';
 import { ActiveUsers } from '../components/Navbar/ActiveUsers';
 import { ShareModal } from '../components/Editor/ShareModal';
@@ -33,6 +33,24 @@ export const EditorPage: React.FC = () => {
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
+
+  const handleRename = async () => {
+    if (!tempTitle.trim() || tempTitle === currentDocument?.title) {
+      setIsEditingTitle(false);
+      return;
+    }
+
+    try {
+      await apiService.put(`/documents/${documentId}`, { title: tempTitle });
+      dispatch(updateTitle(tempTitle));
+      setIsEditingTitle(false);
+    } catch (error) {
+      console.error('Failed to rename document:', error);
+      setIsEditingTitle(false);
+    }
+  };
 
   const handleRemoteUpdate = useCallback((data: any) => {
     dispatch(setSaved(false));
@@ -76,6 +94,7 @@ export const EditorPage: React.FC = () => {
         const indexeddbProvider = new IndexeddbPersistence(`doc-${documentId}`, ydoc);
         indexeddbProviderRef.current = indexeddbProvider;
 
+        // Standard y-websocket provider (Industry standard for Yjs)
         const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:3001';
         const provider = new WebsocketProvider(
           wsUrl,
@@ -85,24 +104,19 @@ export const EditorPage: React.FC = () => {
         );
         providerRef.current = provider;
 
-        // Wait for the WebSocket provider to sync before rendering the editor
+        // Wait for the WebSocket provider to sync
         provider.on('sync', (isSynced: boolean) => {
-          if (isSynced) {
-            setIsProviderReady(true);
-          }
+          if (isSynced) setIsProviderReady(true);
         });
 
-        // Also set ready on connect in case sync fires before we listen
         provider.on('status', ({ status }: { status: string }) => {
-          if (status === 'connected') {
-            setIsProviderReady(true);
-          }
+          if (status === 'connected') setIsProviderReady(true);
         });
 
-        // Fallback: if provider doesn't connect within 3 seconds, render editor anyway
+        // Fallback for connectivity
         setTimeout(() => setIsProviderReady(true), 3000);
 
-        // Sync Yjs awareness → Redux activeUsers whenever any collaborator updates their state
+        // Sync awareness to Redux for notifications/UI
         const awarenessChangeHandler = () => {
           const states = Array.from(provider.awareness.getStates().entries()) as [number, any][];
           const users = states
@@ -119,12 +133,13 @@ export const EditorPage: React.FC = () => {
 
         provider.awareness.on('change', awarenessChangeHandler);
 
+        // socketService is now only for high-level events (share, comments), not text sync
         socketService.connect(
           currentUser.id,
           currentUser.username,
           documentId,
-          handleRemoteUpdate,
-          handleCursorChanged,
+          () => dispatch(setSaved(false)), // Notify UI on remote change
+          () => {}, // Cursors handled by Yjs
           handleNewComment,
           currentUser.avatar_url
         );
@@ -141,20 +156,14 @@ export const EditorPage: React.FC = () => {
     return () => {
       socketService.disconnect();
       if (providerRef.current) {
-        // Remove the awareness listener before destroying
-        providerRef.current.awareness.off('change', () => {});
         providerRef.current.destroy();
-      }
-      if (indexeddbProviderRef.current) {
-        indexeddbProviderRef.current.destroy();
       }
       if (ydocRef.current) {
         ydocRef.current.destroy();
       }
-      dispatch(setActiveUsers([]));
       setIsProviderReady(false);
     };
-  }, [documentId, currentUser, dispatch, handleRemoteUpdate, handleCursorChanged, handleNewComment]);
+  }, [documentId, currentUser, dispatch, handleNewComment]);
 
   const [isExportOpen, setIsExportOpen] = useState(false);
 
@@ -192,9 +201,36 @@ export const EditorPage: React.FC = () => {
             </button>
             <div className="h-8 w-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
             <div className="flex flex-col">
-              <h1 className="text-xl font-black truncate max-w-md tracking-tight" style={{ color: 'var(--text-heading)' }}>
-                {currentDocument?.title || 'Untitled Document'}
-              </h1>
+              {isEditingTitle ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  onBlur={handleRename}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleRename();
+                    if (e.key === 'Escape') setIsEditingTitle(false);
+                  }}
+                  className="text-xl font-black bg-transparent border-b-2 border-[var(--brand-primary)] outline-none w-full max-w-md"
+                  style={{ color: 'var(--text-heading)' }}
+                />
+              ) : (
+                <div 
+                  onClick={() => {
+                    setTempTitle(currentDocument?.title || '');
+                    setIsEditingTitle(true);
+                  }}
+                  className="group flex items-center gap-2 cursor-pointer"
+                >
+                  <h1 className="text-xl font-black truncate max-w-md tracking-tight group-hover:text-[var(--brand-primary)] transition-colors" style={{ color: 'var(--text-heading)' }}>
+                    {currentDocument?.title || 'Untitled Document'}
+                  </h1>
+                  <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--brand-primary)' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <p className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>

@@ -32,11 +32,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
     return null;
   }
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   const addImage = () => {
-    const url = window.prompt('URL');
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        editor.chain().focus().setImage({ src: base64 }).run();
+      };
+      reader.readAsDataURL(file);
     }
+    // Reset input
+    e.target.value = '';
   };
 
   const addTable = () => {
@@ -187,7 +200,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
 
       {/* Group: Insert Media */}
       <div className="flex items-center gap-2">
-        <button onClick={addImage} className="btn-icon !p-2" title="Image"><FiImage size={16} /></button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          accept="image/*"
+          className="hidden"
+        />
+        <button onClick={addImage} className="btn-icon !p-2" title="Local Image"><FiImage size={16} /></button>
         <button onClick={addTable} className="btn-icon !p-2" title="Table"><FiLayout size={16} /></button>
       </div>
     </div>

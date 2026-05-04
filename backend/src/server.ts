@@ -99,15 +99,23 @@ const PORT = process.env.PORT || 3001;
 const wss = new WebSocketServer({ noServer: true });
 
 server.on('upgrade', (request, socket, head) => {
-  // Pass to y-websocket if it's a document sync path
-  if (request.url && request.url.startsWith('/doc-')) {
+  const url = new URL(request.url || '', `http://${request.headers.host}`);
+  const pathname = url.pathname;
+  
+  if (pathname.startsWith('/doc-')) {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit('connection', ws, request);
     });
+  } else {
+    // Other upgrades (like socket.io) are handled by the library automatically
+    // but we can log if something else tries to upgrade
   }
 });
 
 wss.on('connection', (ws, req) => {
+  // room name is the path without the leading slash
+  const roomName = req.url?.slice(1) || 'default';
+  logger.info(`Yjs connection established for room: ${roomName}`);
   setupWSConnection(ws, req);
 });
 

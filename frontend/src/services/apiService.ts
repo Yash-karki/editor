@@ -168,6 +168,23 @@ class APIService {
     const response = await this.api.get(`/activity/documents/${documentId}`);
     return response.data;
   }
+
+  // Generic methods
+  async get(url: string, config?: any) {
+    return this.api.get(url, config);
+  }
+
+  async post(url: string, data?: any, config?: any) {
+    return this.api.post(url, data, config);
+  }
+
+  async put(url: string, data?: any, config?: any) {
+    return this.api.put(url, data, config);
+  }
+
+  async delete(url: string, config?: any) {
+    return this.api.delete(url, config);
+  }
 }
 
 export const apiService = new APIService();

@@ -203,6 +203,35 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         suggestion,
       }),
     ],
+    editorProps: {
+      handleDrop: (view, event, slice, moved) => {
+        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+          const file = event.dataTransfer.files[0];
+          const type = file.type;
+
+          if (type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const base64 = e.target?.result as string;
+              const { schema } = view.state;
+              const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+              
+              if (coordinates) {
+                const node = schema.nodes.image.create({ src: base64 });
+                const transaction = view.state.tr.insert(coordinates.pos, node);
+                view.dispatch(transaction);
+              }
+            };
+            reader.readAsDataURL(file);
+            return true; // handled
+          }
+        }
+        return false;
+      },
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[1056px] p-[2cm]',
+      },
+    },
     onUpdate: ({ editor }) => {
       // Bail out if we triggered this update ourselves (anti double-page guard)
       if (isPaginating.current) return;

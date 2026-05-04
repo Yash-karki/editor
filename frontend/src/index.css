@@ -295,6 +295,35 @@
   }
 }
 
+/* Tiptap Image Styling */
+.ProseMirror img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem auto;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid var(--brand-primary-soft);
+  outline-offset: 4px;
+  box-shadow: 0 0 20px rgba(var(--brand-primary-rgb), 0.1);
+  transform: scale(1.01);
+}
+
+.ProseMirror img:hover {
+  filter: brightness(0.95);
+}
+
+/* Allow browser-native resizing for images if possible, or just better handles */
+.ProseMirror img {
+  resize: both;
+  overflow: hidden;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

@@ -59,6 +59,7 @@ class SocketService {
     });
 
     this.socket.on('remote-update', onRemoteUpdate);
+    this.socket.on('sync-update', onRemoteUpdate);
     this.socket.on('cursor-changed', onCursorChanged);
     this.socket.on('new-comment', onNewComment);
 
