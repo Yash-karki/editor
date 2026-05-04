@@ -1,0 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Solid & Soft Palette - Professional High-End */
+  --brand-primary: #4f46e5;
+  --brand-primary-soft: #f5f3ff;
+  --brand-secondary: #0f172a;
+  
+  /* Backgrounds & Surfaces */
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-sidebar: #ffffff;
+  
+  /* Borders */
+  --border-subtle: #f1f5f9;
+  --border-strong: #e2e8f0;
+  
+  /* Text */
+  --text-heading: #0f172a;
+  --text-body: #334155;
+  --text-muted: #64748b;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-premium: 0 10px 15px -3px rgb(0 0 0 / 0.03), 0 4px 6px -4px rgb(0 0 0 / 0.03);
+}
+
+.dark {
+  --brand-primary: #818cf8;
+  --brand-primary-soft: rgba(129, 140, 248, 0.1);
+  --brand-secondary: #f8fafc;
+  
+  --bg-app: #020617;
+  --bg-surface: #1e293b;
+  --bg-sidebar: #0f172a;
+  
+  --border-subtle: #334155;
+  --border-strong: #475569;
+  
+  --text-heading: #f8fafc;
+  --text-body: #cbd5e1;
+  --text-muted: #94a3b8;
+}
+
+@layer base {
+  body {
+    @apply antialiased transition-colors duration-300;
+    background-color: var(--bg-app);
+    color: var(--text-body);
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+    color: var(--text-heading);
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply backdrop-blur-xl border transition-all duration-300;
+    background-color: var(--bg-surface);
+    border-color: var(--border-subtle);
+    box-shadow: var(--shadow-premium);
+  }
+
+  .premium-card {
+    @apply rounded-3xl border transition-all duration-300;
+    background-color: var(--bg-surface);
+    border-color: var(--border-subtle);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .premium-card:hover {
+    @apply -translate-y-1;
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-premium);
+  }
+
+  .btn-primary {
+    @apply px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-2;
+    background-color: var(--brand-primary);
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+  }
+  
+  .btn-primary:hover {
+    @apply -translate-y-0.5;
+    filter: brightness(1.1);
+    box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
+  }
+
+  .btn-icon {
+    @apply p-2.5 rounded-xl transition-all duration-200 flex items-center justify-center;
+    color: var(--text-muted);
+    background-color: transparent;
+  }
+
+  .btn-icon:hover {
+    color: var(--text-heading);
+    background-color: var(--border-subtle);
+  }
+}
+
+/* ========================================
+   TRUE PAGINATED EDITOR — Fixed Layout
+   ======================================== */
+
+/* Full-height wrapper that holds toolbar + scroll area */
+.rte-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* THE scroll container — this is the only scrollable element */
+.rte-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  background-color: var(--bg-app);
+  padding: 40px 24px 80px 24px;
+}
+
+/* Center the pages horizontally */
+.rte-content-area {
+  display: flex;
+  justify-content: center;
+}
+
+/* ProseMirror root: vertical stack of pages */
+.ProseMirror {
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  width: max-content;
+  min-width: 210mm;
+  padding-bottom: 80px;
+}
+
+/* Fallback: raw content not wrapped in a page node */
+.ProseMirror > *:not(.a4-page) {
+  position: relative;
+  flex-shrink: 0;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm;
+  background-color: var(--bg-surface);
+  color: var(--text-body);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+}
+
+/* The actual A4 page card */
+.a4-page {
+  position: relative;
+  flex-shrink: 0;
+  width: 210mm;
+  min-height: 297mm;
+  /* IMPORTANT: no max-height so content can overflow and trigger pagination */
+  padding: 20mm;
+  background-color: var(--bg-surface);
+  color: var(--text-body);
+  font-family: 'Inter', sans-serif;
+  border-radius: 2px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.a4-page:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark mode page styles */
+.dark .a4-page,
+.dark .ProseMirror > *:not(.a4-page) {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Placeholder text inside empty page */
+.a4-page p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  pointer-events: none;
+  height: 0;
+}
+
+
+/* Collaboration Cursors */
+.ProseMirror-yjs-cursor {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 2px solid;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.ProseMirror-yjs-cursor > div {
+  position: absolute;
+  top: -1.25em;
+  left: -1px;
+  font-size: 11px;
+  background-color: inherit;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  line-height: normal;
+  user-select: none;
+  color: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px 4px 4px 0;
+  white-space: nowrap;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mention {
+  @apply rounded-md px-1.5 py-0.5 font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 cursor-pointer hover:bg-indigo-100;
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-700 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600;
+  }
+}
+
+@media print {
+  body {
+    background: none;
+  }
+  .ProseMirror {
+    margin: 0;
+    box-shadow: none;
+    width: 100%;
+    padding: 0;
+  }
+  .ProseMirror hr {
+    display: block;
+    height: 0;
+    margin: 0;
+    visibility: hidden;
+    page-break-after: always;
+  }
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeInScale {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-scale {
+  animation: fadeInScale 0.2s ease-out forwards;
+}
+
+@media (max-width: 768px) {
+  .glass {
+    @apply px-4 py-2 h-auto flex-col gap-4;
+  }
+  
+  .w-80 {
+    @apply fixed inset-y-0 right-0 w-full z-50;
+  }
+  
+  .ProseMirror {
+    @apply p-4 text-base;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300;
+}
