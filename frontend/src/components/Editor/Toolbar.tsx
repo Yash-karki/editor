@@ -20,6 +20,16 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const [isOutlineOpen, setIsOutlineOpen] = React.useState(false);
+  const [, forceUpdate] = React.useState({});
+
+  React.useEffect(() => {
+    if (!editor) return;
+    const handler = () => forceUpdate({});
+    editor.on('transaction', handler);
+    return () => {
+      editor.off('transaction', handler);
+    };
+  }, [editor]);
 
   if (!editor) {
     return null;
@@ -46,19 +56,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
       }
     }, 100);
   };
-
-
-
-  const [, forceUpdate] = React.useState({});
-
-  React.useEffect(() => {
-    if (!editor) return;
-    const handler = () => forceUpdate({});
-    editor.on('transaction', handler);
-    return () => {
-      editor.off('transaction', handler);
-    };
-  }, [editor]);
 
   // Count pages in the document
   let pageCount = 0;
