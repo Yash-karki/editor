@@ -20,7 +20,7 @@ export const EditorPage: React.FC = () => {
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { currentUser } = useSelector((state: RootState) => state.user);
+  const { currentUser, accessToken } = useSelector((state: RootState) => state.user);
   const { currentDocument, activeUsers } = useSelector((state: RootState) => state.document);
 
   const ydocRef = useRef<Y.Doc | null>(null);
@@ -242,7 +242,7 @@ export const EditorPage: React.FC = () => {
               </svg>
             </button>
 
-            <div className="relative">
+            <div className="relative h-full flex items-center">
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -261,13 +261,13 @@ export const EditorPage: React.FC = () => {
                   {/* Invisible backdrop to close on click outside */}
                   <div className="fixed inset-0 z-40" onClick={() => setIsExportOpen(false)} />
                   
-                  <div className="absolute right-0 top-full mt-2 w-56 glass rounded-[1.5rem] shadow-2xl overflow-hidden border z-50 animate-fade-scale" style={{ borderColor: 'var(--border-subtle)' }}>
+                  <div className="absolute right-0 top-[80%] mt-2 w-56 glass rounded-[1.5rem] shadow-2xl overflow-hidden border z-50 animate-fade-scale" style={{ borderColor: 'var(--border-subtle)' }}>
                     <div className="px-5 py-3 border-b bg-slate-50/50 dark:bg-slate-800/20" style={{ borderColor: 'var(--border-subtle)' }}>
                       <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Choose Format</p>
                     </div>
                     <button 
                       onClick={() => {
-                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=markdown`, '_blank');
+                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=markdown&token=${accessToken}`, '_blank');
                         setIsExportOpen(false);
                       }}
                       className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors"
@@ -277,7 +277,7 @@ export const EditorPage: React.FC = () => {
                     </button>
                     <button 
                       onClick={() => {
-                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=pdf`, '_blank');
+                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=pdf&token=${accessToken}`, '_blank');
                         setIsExportOpen(false);
                       }}
                       className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors flex justify-between items-center"
@@ -287,7 +287,7 @@ export const EditorPage: React.FC = () => {
                     </button>
                     <button 
                       onClick={() => {
-                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=docx`, '_blank');
+                        window.open(`${process.env.REACT_APP_API_URL}/export/documents/${documentId}?format=docx&token=${accessToken}`, '_blank');
                         setIsExportOpen(false);
                       }}
                       className="w-full text-left px-5 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[var(--brand-primary-soft)] hover:text-[var(--brand-primary)] transition-colors flex justify-between items-center"
