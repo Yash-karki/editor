@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/apiService';
 
 interface Collaborator {
@@ -24,20 +24,20 @@ export const ShareModal: React.FC<ShareModalProps> = ({ documentId, isOpen, onCl
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadCollaborators();
-    }
-  }, [isOpen, documentId]);
-
-  const loadCollaborators = async () => {
+  const loadCollaborators = useCallback(async () => {
     try {
       const data = await apiService.getCollaborators(documentId);
       setCollaborators(data);
     } catch (err) {
       console.error('Failed to load collaborators:', err);
     }
-  };
+  }, [documentId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadCollaborators();
+    }
+  }, [isOpen, loadCollaborators]);
 
   const handleShare = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,14 +65,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ documentId, isOpen, onCl
     }
   };
 
-  const getPermissionBadge = (level: string) => {
-    const colors: Record<string, string> = {
-      owner: 'bg-purple-100 text-purple-700',
-      editor: 'bg-blue-100 text-blue-700',
-      viewer: 'bg-gray-100 text-gray-700',
-    };
-    return colors[level] || colors.viewer;
-  };
+
 
   if (!isOpen) return null;
 

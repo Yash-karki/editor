@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import * as Y from 'yjs';
@@ -33,6 +33,23 @@ export const EditorPage: React.FC = () => {
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+
+  const handleRemoteUpdate = useCallback((data: any) => {
+    dispatch(setSaved(false));
+  }, [dispatch]);
+
+  const handleCursorChanged = useCallback((data: any) => {
+    dispatch(addActiveUser({
+      id: data.userId,
+      username: data.username,
+      color: data.color || '#45B7D1',
+      cursor_position: data.position,
+    }));
+  }, [dispatch]);
+
+  const handleNewComment = useCallback((data: any) => {
+    console.log('New comment:', data);
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -137,24 +154,7 @@ export const EditorPage: React.FC = () => {
       dispatch(setActiveUsers([]));
       setIsProviderReady(false);
     };
-  }, [documentId, currentUser, dispatch]);
-
-  const handleRemoteUpdate = (data: any) => {
-    dispatch(setSaved(false));
-  };
-
-  const handleCursorChanged = (data: any) => {
-    dispatch(addActiveUser({
-      id: data.userId,
-      username: data.username,
-      color: data.color || '#45B7D1',
-      cursor_position: data.position,
-    }));
-  };
-
-  const handleNewComment = (data: any) => {
-    console.log('New comment:', data);
-  };
+  }, [documentId, currentUser, dispatch, handleRemoteUpdate, handleCursorChanged, handleNewComment]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;

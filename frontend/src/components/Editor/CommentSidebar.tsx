@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/apiService';
 import { socketService } from '../../services/socketService';
 
@@ -22,6 +22,17 @@ export const CommentSidebar: React.FC<CommentSidebarProps> = ({ documentId, onCl
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadComments = useCallback(async () => {
+    try {
+      const data = await apiService.getComments(documentId);
+      setComments(data);
+    } catch (err) {
+      console.error('Failed to load comments');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [documentId]);
+
   useEffect(() => {
     loadComments();
 
@@ -37,25 +48,14 @@ export const CommentSidebar: React.FC<CommentSidebarProps> = ({ documentId, onCl
     return () => {
       socket?.off('new-comment');
     };
-  }, [documentId]);
-
-  const loadComments = async () => {
-    try {
-      const data = await apiService.getComments(documentId);
-      setComments(data);
-    } catch (err) {
-      console.error('Failed to load comments');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [documentId, loadComments]);
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
     try {
-      const comment = await apiService.createComment({
+      await apiService.createComment({
         documentId,
         content: newComment,
       });

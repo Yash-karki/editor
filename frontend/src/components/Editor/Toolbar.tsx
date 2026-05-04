@@ -5,14 +5,11 @@ import {
   FiBold,
   FiItalic,
   FiUnderline,
-  FiList,
   FiImage,
   FiLayout,
   FiAlignLeft,
-  FiAlignCenter,
-  FiAlignRight
+  FiAlignCenter
 } from 'react-icons/fi';
-import { MdFormatListNumbered } from 'react-icons/md';
 
 interface ToolbarProps {
   editor: Editor | null;

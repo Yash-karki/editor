@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/apiService';
 
 interface ActivityLog {
@@ -20,11 +20,7 @@ export const ActivityLogSidebar: React.FC<ActivityLogSidebarProps> = ({ document
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadLogs();
-  }, [documentId]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       const data = await apiService.getActivityLogs(documentId);
       setLogs(data);
@@ -33,7 +29,11 @@ export const ActivityLogSidebar: React.FC<ActivityLogSidebarProps> = ({ document
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [documentId]);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
 
   const getActionIcon = (action: string) => {
     switch (action) {

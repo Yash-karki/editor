@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/apiService';
 
 interface Version {
@@ -25,13 +25,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   const [versions, setVersions] = useState<Version[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadVersions();
-    }
-  }, [isOpen, documentId]);
-
-  const loadVersions = async () => {
+  const loadVersions = useCallback(async () => {
     try {
       const data = await apiService.getVersionHistory(documentId);
       setVersions(data);
@@ -40,7 +34,13 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [documentId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadVersions();
+    }
+  }, [isOpen, loadVersions]);
 
   const handleRestore = async (versionNumber: number) => {
     if (!window.confirm(`Are you sure you want to restore version ${versionNumber}? Current changes will be overwritten.`)) {
