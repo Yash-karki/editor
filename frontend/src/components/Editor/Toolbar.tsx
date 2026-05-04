@@ -18,6 +18,7 @@ interface ToolbarProps {
 export const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   const [isOutlineOpen, setIsOutlineOpen] = React.useState(false);
   const [, forceUpdate] = React.useState({});
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (!editor) return;
@@ -31,8 +32,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({ editor }) => {
   if (!editor) {
     return null;
   }
-
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const addImage = () => {
     fileInputRef.current?.click();

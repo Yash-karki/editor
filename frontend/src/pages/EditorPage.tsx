@@ -52,19 +52,6 @@ export const EditorPage: React.FC = () => {
     }
   };
 
-  const handleRemoteUpdate = useCallback((data: any) => {
-    dispatch(setSaved(false));
-  }, [dispatch]);
-
-  const handleCursorChanged = useCallback((data: any) => {
-    dispatch(addActiveUser({
-      id: data.userId,
-      username: data.username,
-      color: data.color || '#45B7D1',
-      cursor_position: data.position,
-    }));
-  }, [dispatch]);
-
   const handleNewComment = useCallback((data: any) => {
     console.log('New comment:', data);
   }, []);
