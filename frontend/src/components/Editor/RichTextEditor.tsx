@@ -5,15 +5,14 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Underline } from '@tiptap/extension-underline';
 import { Link } from '@tiptap/extension-link';
-import { Image } from '@tiptap/extension-image';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { Collaboration } from '@tiptap/extension-collaboration';
-import { Extension, Node } from '@tiptap/core';
+import { Extension, Node, mergeAttributes } from '@tiptap/core';
 import { Mention } from '@tiptap/extension-mention';
-import { ReactRenderer } from '@tiptap/react';
+import { ReactRenderer, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Typography } from '@tiptap/extension-typography';
 import { CharacterCount } from '@tiptap/extension-character-count';
@@ -21,10 +20,290 @@ import { yCursorPlugin } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import tippy from 'tippy.js';
-
 import { Toolbar } from './Toolbar';
 import { MentionList } from './MentionList';
 import { apiService } from '../../services/apiService';
+
+// --- Custom Resizable Image Extension ---
+const ResizableImageComponent = (props: any) => {
+  const { node, updateAttributes, selected, editor, getPos } = props;
+  const imageRef = React.useRef<HTMLImageElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [resizing, setResizing] = React.useState(false);
+  const [showZoom, setShowZoom] = React.useState(false);
+
+  // Global click listener to unselect image when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selected && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        // Move selection to after the image to deselect it
+        editor.commands.setTextSelection(getPos() + 1);
+        editor.commands.focus();
+      }
+    };
+
+    if (selected) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [selected, editor, getPos]);
+
+  const onMouseDown = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setResizing(true);
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (imageRef.current) {
+        const newWidth = moveEvent.clientX - imageRef.current.getBoundingClientRect().left;
+        updateAttributes({ width: Math.max(50, newWidth) });
+      }
+    };
+
+    const onMouseUp = () => {
+      setResizing(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
+  return (
+    <NodeViewWrapper 
+      as="div"
+      className={`resizable-image-container ${selected ? 'selected' : ''}`}
+      draggable="true"
+      contentEditable={false}
+      ref={containerRef}
+    >
+      <div className="relative inline-block group">
+        {/* Advanced Floating Edit Menu */}
+        {selected && (
+          <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-[1000] animate-fade-scale">
+            <div className="flex items-center gap-1 p-2 bg-slate-900 shadow-2xl rounded-2xl border-2 border-white/20">
+              {/* Drag Handle - HIGH VISIBILITY */}
+              <div 
+                className="p-2 text-white bg-white/10 rounded-lg cursor-grab active:cursor-grabbing hover:bg-white/20 transition-all"
+                title="Drag to move image"
+                data-drag-handle
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 8h16M4 12h16M4 16h16" /></svg>
+              </div>
+
+              <div className="w-px h-4 bg-white/10 mx-1" />
+
+              <button 
+                onClick={() => updateAttributes({ textAlign: 'left' })}
+                className={`p-2 rounded-xl transition-all ${node.attrs.textAlign === 'left' ? 'bg-white/20 text-[var(--brand-primary)]' : 'text-white/70 hover:bg-white/10'}`}
+                title="Align Left"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h10M4 18h16" /></svg>
+              </button>
+              <button 
+                onClick={() => updateAttributes({ textAlign: 'center' })}
+                className={`p-2 rounded-xl transition-all ${node.attrs.textAlign === 'center' ? 'bg-white/20 text-[var(--brand-primary)]' : 'text-white/70 hover:bg-white/10'}`}
+                title="Align Center"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M7 12h10M4 18h16" /></svg>
+              </button>
+              <button 
+                onClick={() => updateAttributes({ textAlign: 'right' })}
+                className={`p-2 rounded-xl transition-all ${node.attrs.textAlign === 'right' ? 'bg-white/20 text-[var(--brand-primary)]' : 'text-white/70 hover:bg-white/10'}`}
+                title="Align Right"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M10 12h10M4 18h16" /></svg>
+              </button>
+
+              <div className="w-px h-4 bg-white/10 mx-1" />
+
+              <button 
+                onClick={() => setShowZoom(!showZoom)}
+                className={`p-2 rounded-xl transition-all ${showZoom ? 'bg-white/20 text-[var(--brand-primary)]' : 'text-white/70 hover:bg-white/10'}`}
+                title="Crop / Zoom"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+              </button>
+
+              <div className="w-px h-4 bg-white/10 mx-1" />
+
+              <button 
+                onClick={() => props.deleteNode()}
+                className="p-2 hover:bg-red-500/80 rounded-xl text-white transition-colors"
+                title="Delete Image"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+
+              <div className="w-px h-4 bg-white/10 mx-1" />
+
+              <button 
+                onClick={() => {
+                  // Force selection to the position after the image to deselect it
+                  const pos = props.getPos();
+                  props.editor.commands.setTextSelection(pos + 1);
+                  props.editor.commands.focus();
+                }}
+                className="p-2 hover:bg-white/20 rounded-xl text-white transition-colors"
+                title="Done Editing"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Full 4-Side Crop Sliders Popup */}
+            {showZoom && (
+              <div 
+                className="p-4 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 w-64 animate-fade-scale space-y-4"
+                onMouseDown={(e) => e.stopPropagation()} // CRITICAL: Prevent Tiptap from stealing clicks
+              >
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">Overall Zoom</p>
+                  <input 
+                    type="range" min="1" max="3" step="0.1" 
+                    value={node.attrs.zoom || 1}
+                    onChange={(e) => updateAttributes({ zoom: parseFloat(e.target.value) })}
+                    className="w-full accent-[var(--brand-primary)]"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Top</p>
+                    <input 
+                      type="range" min="0" max="40" step="1" 
+                      value={node.attrs.cropTop || 0}
+                      onChange={(e) => updateAttributes({ cropTop: parseInt(e.target.value) })}
+                      className="w-full accent-[var(--brand-primary)]"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Bottom</p>
+                    <input 
+                      type="range" min="0" max="40" step="1" 
+                      value={node.attrs.cropBottom || 0}
+                      onChange={(e) => updateAttributes({ cropBottom: parseInt(e.target.value) })}
+                      className="w-full accent-[var(--brand-primary)]"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Left</p>
+                    <input 
+                      type="range" min="0" max="40" step="1" 
+                      value={node.attrs.cropLeft || 0}
+                      onChange={(e) => updateAttributes({ cropLeft: parseInt(e.target.value) })}
+                      className="w-full accent-[var(--brand-primary)]"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Right</p>
+                    <input 
+                      type="range" min="0" max="40" step="1" 
+                      value={node.attrs.cropRight || 0}
+                      onChange={(e) => updateAttributes({ cropRight: parseInt(e.target.value) })}
+                      className="w-full accent-[var(--brand-primary)]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="overflow-hidden rounded-xl">
+          <img
+            ref={imageRef}
+            src={node.attrs.src}
+            style={{ 
+              width: node.attrs.width ? `${node.attrs.width}px` : 'auto', 
+              height: 'auto',
+              transform: `scale(${node.attrs.zoom || 1})`,
+              clipPath: `inset(${node.attrs.cropTop || 0}% ${node.attrs.cropRight || 0}% ${node.attrs.cropBottom || 0}% ${node.attrs.cropLeft || 0}%)`,
+            }}
+            className="transition-all duration-300 origin-center"
+            alt={node.attrs.alt}
+          />
+        </div>
+        
+        {selected && (
+          <div
+            onMouseDown={onMouseDown}
+            className="absolute bottom-2 right-2 w-6 h-6 bg-[var(--brand-primary)] rounded-full cursor-nwse-resize shadow-lg border-2 border-white z-[110] hover:scale-125 transition-transform flex items-center justify-center"
+          >
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+          </div>
+        )}
+      </div>
+    </NodeViewWrapper>
+  );
+};
+
+const ResizableImage = Node.create({
+  name: 'image',
+  group: 'block',
+  selectable: true,
+  draggable: true,
+  atom: true,
+  addAttributes() {
+    return {
+      src: { default: null },
+      alt: { default: null },
+      title: { default: null },
+      width: { default: 400 },
+      textAlign: { default: 'center' },
+      zoom: { default: 1 },
+      cropLeft: { default: 0 },
+      cropRight: { default: 0 },
+      cropTop: { default: 0 },
+      cropBottom: { default: 0 },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'img[src]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    const { width, zoom, cropTop, cropRight, cropBottom, cropLeft, textAlign } = HTMLAttributes;
+    
+    // Generate inline styles for export
+    const style = [
+      width ? `width: ${width}px` : 'width: auto',
+      'height: auto',
+      zoom ? `transform: scale(${zoom})` : '',
+      (cropTop || cropRight || cropBottom || cropLeft) ? 
+        `clip-path: inset(${cropTop || 0}% ${cropRight || 0}% ${cropBottom || 0}% ${cropLeft || 0}%)` : '',
+      textAlign === 'center' ? 'margin-left: auto; margin-right: auto; display: block;' : 
+      textAlign === 'right' ? 'margin-left: auto; display: block;' : 'display: block;'
+    ].filter(Boolean).join('; ');
+
+    return ['img', mergeAttributes(HTMLAttributes, { style })];
+  },
+  addCommands() {
+    return {
+      setImage: options => ({ commands }) => {
+        return commands.insertContent([
+          {
+            type: this.name,
+            attrs: options,
+          },
+          {
+            type: 'paragraph',
+          }
+        ])
+      },
+    }
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ResizableImageComponent);
+  },
+  stopEvent({ event }) {
+    // Allow slider and buttons to receive events without Tiptap intercepting
+    const target = event.target as HTMLElement;
+    return target.closest('input') !== null || target.closest('button') !== null;
+  },
+});
+// ------------------------------------------
 
 const suggestion = {
   items: async ({ query }: { query: string }) => {
@@ -185,7 +464,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       Page,
       Underline,
       Link.configure({ openOnClick: false }),
-      Image.configure({ allowBase64: true }),
+      ResizableImage,
       Table,
       TableRow,
       TableHeader,
@@ -203,6 +482,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         suggestion,
       }),
     ],
+    onUpdate: ({ editor }) => {
+      // Debounced auto-save of HTML content for Export functionality
+      const html = editor.getHTML();
+      const documentId = props.documentId;
+      
+      // Simple debounce simulation
+      if ((window as any).saveTimeout) clearTimeout((window as any).saveTimeout);
+      (window as any).saveTimeout = setTimeout(async () => {
+        try {
+          await apiService.put(`/documents/${documentId}`, { content: { html } });
+        } catch (error) {
+          console.error('Failed to auto-save for export:', error);
+        }
+      }, 2000);
+    },
     editorProps: {
       handleDrop: (view, event, slice, moved) => {
         if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
@@ -247,23 +541,27 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const lastPage = pages[pages.length - 1];
         
         // Only trigger auto-pagination if the LAST page is overflowing
-        // This avoids recursive page creation if an earlier page is temporarily "overflowing" during layout
-        if (lastPage && lastPage.scrollHeight > lastPage.clientHeight + 20) {
-          // Additional check: make sure last page isn't empty (avoids infinite empty pages)
-          if (lastPage.textContent.trim().length > 0) {
+        if (lastPage && lastPage.scrollHeight > lastPage.clientHeight + 40) {
+          // Robust content check: text OR images
+          const hasText = lastPage.textContent.trim().length > 0;
+          const hasImages = lastPage.querySelector('img') !== null;
+          
+          if ((hasText || hasImages) && !isPaginating.current) {
             isPaginating.current = true;
             editor.commands.insertPage();
+            
+            // Allow time for DOM and Yjs to sync before allowing another page
             setTimeout(() => {
               isPaginating.current = false;
               const allPages = document.querySelectorAll('.a4-page');
               const last = allPages[allPages.length - 1];
               if (last) {
-                last.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                last.scrollIntoView({ behavior: 'smooth', block: 'end' });
               }
-            }, 500);
+            }, 2000);
           }
         }
-      }, 1000);
+      }, 1500);
     },
   });
 

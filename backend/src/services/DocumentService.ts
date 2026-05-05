@@ -87,17 +87,18 @@ export class DocumentService {
         throw { statusCode: 403, message: 'Permission denied to update document metadata' };
       }
 
-      const { title, description, visibility } = updates;
+      const { title, description, visibility, content } = updates;
       
       const result = await this.db.query(
         `UPDATE documents 
          SET title = COALESCE($1, title),
              description = COALESCE($2, description),
              visibility = COALESCE($3, visibility),
+             content = COALESCE($4, content),
              updated_at = CURRENT_TIMESTAMP
-         WHERE id = $4
+         WHERE id = $5
          RETURNING *`,
-        [title, description, visibility, documentId]
+        [title, description, visibility, content, documentId]
       );
 
       return result.rows[0];
